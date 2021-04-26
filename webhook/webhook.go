@@ -8,6 +8,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"net/http"
 )
 
 var (
@@ -39,8 +40,17 @@ type Config struct {
 	Volumes    []corev1.Volume    `yaml:"volumes"`
 }
 
+type WebhookServer struct {
+	initContainerConfig *Config
+	server *http.Server
+}
+
 func init() {
 	corev1.AddToScheme(runtimeScheme)
 	admissionregistrationv1beta1.AddToScheme(runtimeScheme)
 	v1.AddToScheme(runtimeScheme)
+}
+
+func (ws WebhookServer) serve(responseWrite http.ResponseWriter, request *http.Request){
+
 }

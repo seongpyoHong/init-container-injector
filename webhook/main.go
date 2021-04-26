@@ -2,8 +2,11 @@ package main
 
 import (
 	"crypto/sha256"
+	"crypto/tls"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/golang/glog"
 	"gopkg.in/yaml.v2"
@@ -23,6 +26,25 @@ func main() {
 	if err != nil {
 		glog.Exit("Failed to Load Init Container Configuration.")
 	}
+
+	pair, err := tls.LoadX509KeyPair(parameters.certFile, parameters.keyFile)
+	if err != nil {
+		glog.Errorf("Failed to load key pair : %v", err)
+	}
+
+	webhookServer := WebhookServer{
+		initContainerConfig: initContainerConfig,
+		server: &http.Server{
+			Addr: fmt.Sprintf(":%v", parameters.port),
+			TLSConfig: &tls.Config{
+				Certificates: []tls.Certificate{pair},
+			},
+		},
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/mutate", webhookServer.serve)
+
 }
 
 func loadConfig(configFilePath string) (*Config, error) {
