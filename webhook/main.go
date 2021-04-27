@@ -43,7 +43,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/mutate", webhookServer.serve)
+	mux.HandleFunc("/mutate", webhookServer.Serve)
 
 }
 
