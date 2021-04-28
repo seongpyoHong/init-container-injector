@@ -6,9 +6,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/golang/glog"
+	log "github.com/sirupsen/logrus"
 	admissionv1 "k8s.io/api/admission/v1"
-	v1 "k8s.io/api/admission/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -75,14 +74,14 @@ func (ws WebhookServer) Serve(responseWriter http.ResponseWriter, request *http.
 	}
 
 	if len(requestBody) == 0 {
-		glog.Error("Empty Body")
+		log.Error("Empty Body")
 		http.Error(responseWriter, "Empty Body", http.StatusBadRequest)
 	}
 
 	var admissionResponse *admissionv1.AdmissionResponse
 	originAdmissionReview := admissionv1.AdmissionReview{}
 	if _, _, err := deserializer.Decode(requestBody, nil, &originAdmissionReview); err != nil {
-		glog.Errorf("Can't decode request body: %v", err)
+		log.Errorf("Can't decode request body: %v", err)
 		admissionResponse = &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
 				Message: err.Error(),
@@ -100,13 +99,13 @@ func (ws WebhookServer) Serve(responseWriter http.ResponseWriter, request *http.
 
 	data, err := json.Marshal(mutatedAdmissionReview)
 	if err != nil {
-		glog.Errorf("Can't encode response : %v", err)
+		log.Errorf("Can't encode response : %v", err)
 		http.Error(responseWriter, fmt.Sprintf("Can't encode response : %v", err), http.StatusInternalServerError)
 	}
 
-	glog.Infof("Ready to write response")
+	log.Infof("Ready to write response")
 	if _, err := responseWriter.Write(data); err != nil {
-		glog.Errorf("Can't Write Response : %v", err)
+		log.Errorf("Can't Write Response : %v", err)
 		http.Error(responseWriter, fmt.Sprintf("Can't write response : %v", err), http.StatusInternalServerError)
 	}
 }
@@ -115,7 +114,7 @@ func (ws WebhookServer) mutate(admissionReview *admissionv1.AdmissionReview) *ad
 	request := admissionReview.Request
 	var deployment appv1.Deployment
 	if err := json.Unmarshal(request.Object.Raw, &deployment); err != nil {
-		glog.Errorf("Couldn't unmarshall raw object : %v", err)
+		log.Errorf("Couldn't unmarshall raw object : %v", err)
 		return &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
 				Message: err.Error(),
@@ -123,11 +122,11 @@ func (ws WebhookServer) mutate(admissionReview *admissionv1.AdmissionReview) *ad
 		}
 	}
 
-	glog.Infof("AdmissionReview for Kind=%v | Namespace=%v | Name=%v (%v) UID=%v patchOperation=%v UserInfo=%v",
+	log.Infof("AdmissionReview for Kind=%v | Namespace=%v | Name=%v (%v) UID=%v patchOperation=%v UserInfo=%v",
 		request.Kind, request.Namespace, request.Name, deployment.Name, request.UID, request.Operation, request.UserInfo)
 
 	if !isMutationTarget(ignoredNamespaces, &deployment.ObjectMeta) {
-		glog.Infof("Skip mutation for %s/%s", deployment.Namespace, deployment.Namespace)
+		log.Infof("Skip mutation for %s/%s", deployment.Namespace, deployment.Namespace)
 		return &admissionv1.AdmissionResponse{
 			Allowed: true,
 		}
@@ -138,19 +137,19 @@ func (ws WebhookServer) mutate(admissionReview *admissionv1.AdmissionReview) *ad
 	patchBytes, err := createPatch(&deployment, ws.initContainerConfig, annotations)
 
 	if err != nil {
-		return &v1.AdmissionResponse{
+		return &admissionv1.AdmissionResponse{
 			Result: &metav1.Status{
 				Message: err.Error(),
 			},
 		}
 	}
 
-	glog.Infof("AdmissionResponse JSONPatch = %v\n", string(patchBytes))
-	return &v1.AdmissionResponse{
+	log.Infof("AdmissionResponse JSONPatch = %v\n", string(patchBytes))
+	return &admissionv1.AdmissionResponse{
 		Allowed: true,
 		Patch:   patchBytes,
 		PatchType: func() *admissionv1.PatchType {
-			pt := v1.PatchTypeJSONPatch
+			pt := admissionv1.PatchTypeJSONPatch
 			return &pt
 		}(),
 	}
@@ -211,7 +210,7 @@ func applyDefaultWorkaround(containers []corev1.Container) {
 func isMutationTarget(ignoreNamespaces []string, metadata *metav1.ObjectMeta) bool {
 	for _, namespace := range ignoredNamespaces {
 		if metadata.Namespace == namespace {
-			glog.Infof("Skip mutation for %s namespace")
+			log.Infof("Skip mutation for %s namespace")
 			return false
 		}
 	}
