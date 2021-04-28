@@ -19,10 +19,10 @@ func main() {
 	flag.IntVar(&parameters.port, "port", 8080, "Webhook Server Port")
 	flag.StringVar(&parameters.certFile, "tlsCertFile", "/etc/webhook/certs/cert.pem", "x509 Certificate File for HTTPS")
 	flag.StringVar(&parameters.keyFile, "tlsKeyFile", "/etc/webhook/certs/key.pem", "x509 Certificate Private Key")
-	flag.StringVar(&parameters.initConainerConfigFile, "initContainerConfig", "/etc/webhook/config/init-container.yaml", "Mutation Configuration File")
+	flag.StringVar(&parameters.initContainerConfigFile, "initContainerConfig", "/etc/webhook/config/init-container.yaml", "Mutation Configuration File")
 
 	// read init container configuration
-	initContainerConfig, err := loadConfig(parameters.initConainerConfigFile)
+	initContainerConfig, err := loadConfig(parameters.initContainerConfigFile)
 	if err != nil {
 		glog.Exit("Failed to Load Init Container Configuration.")
 	}
