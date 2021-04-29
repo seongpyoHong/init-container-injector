@@ -8,17 +8,14 @@ webhooks:
   - name: mutate-server-svc.mutate-webhook.svc
     admissionReviewVersions: ["v1"]
     sideEffects: NoneOnDryRun
-    objectSelector:
-      matchLabels:
-        init-container-injector-webhook.sphong.com/inject: "true"
     clientConfig:
       service:
         name: mutate-server-svc
         namespace: mutate-webhook
         path: "/mutate"
-      caBundle: ${CA_BUNDLE}
+      caBundle: "${CA_BUNDLE}"
     rules:
     - operations: ["CREATE"]
-      apiGroups: [""]
+      apiGroups: ["apps"]
       apiVersions: ["v1"]
       resources: ["deployments"]
