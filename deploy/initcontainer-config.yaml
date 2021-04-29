@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: init-container-injector-webhook-config
+  name: initcontainer-config
   namespace: mutate-webhook
 data:
   init-container.yaml: |

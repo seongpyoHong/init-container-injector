@@ -1,7 +1,7 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: init-cotainer-injector-admission-controller
+  name: webhook-config
   labels:
     app: init-container-injector
 webhooks:

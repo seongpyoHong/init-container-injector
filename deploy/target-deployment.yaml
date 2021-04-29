@@ -6,7 +6,6 @@ metadata:
     init-container-injector-webhook.sphong.com/inject: "true"
   labels:
     app: nginx
-    
 spec:
   replicas: 3
   selector:

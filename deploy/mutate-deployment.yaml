@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: mutate-server
-        image: init-container-injector:1.0.0
+        image: init-container-injector:0.1.0
         imagePullPolicy: Never
         ports:
         - containerPort: 8080
@@ -22,12 +22,12 @@ spec:
           - name: webhook-certs
             mountPath: /etc/webhook/certs
             readOnly: true
-          - name: webhook-config
+          - name: initcontainer-config
             mountPath: /etc/webhook/config
       volumes:
         - name: webhook-certs
           secret:
             secretName: webhook-certs
-        - name: webhook-config
+        - name: initcontainer-config
           configMap:
-            name: init-container-injector-webhook-config
+            name: initcontainer-config
