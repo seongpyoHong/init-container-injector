@@ -91,7 +91,12 @@ func (ws WebhookServer) Serve(responseWriter http.ResponseWriter, request *http.
 		admissionResponse = ws.mutate(&originAdmissionReview)
 	}
 
-	mutatedAdmissionReview := admissionv1.AdmissionReview{}
+	typeMeta := metav1.TypeMeta{
+		Kind:       "AdmissionReview",
+		APIVersion: "admission.k8s.io/v1",
+	}
+
+	mutatedAdmissionReview := admissionv1.AdmissionReview{TypeMeta: typeMeta}
 	mutatedAdmissionReview.Response = admissionResponse
 	if originAdmissionReview.Request != nil {
 		mutatedAdmissionReview.Response.UID = originAdmissionReview.Request.UID
@@ -157,7 +162,7 @@ func (ws WebhookServer) mutate(admissionReview *admissionv1.AdmissionReview) *ad
 
 func createPatch(deployment *appv1.Deployment, config *Config, annotations map[string]string) ([]byte, error) {
 	var patch []patchOperation
-	patch = append(patch, addInitContainer(deployment.Spec.Template.Spec.InitContainers, config.Containers, "/spec/template/spec/initcontainers/")...)
+	patch = append(patch, addInitContainer(deployment.Spec.Template.Spec.InitContainers, config.Containers, "/spec/template/spec/initContainers")...)
 	patch = append(patch, updateAnnotation(deployment.Annotations, annotations)...)
 
 	return json.Marshal(patch)
@@ -167,9 +172,11 @@ func updateAnnotation(deployAnnotation map[string]string, annotations map[string
 	for k, v := range annotations {
 		if deployAnnotation != nil && deployAnnotation[k] == "true" {
 			patch = append(patch, patchOperation{
-				Op:    "replace",
-				Path:  "/metadata/annotations/" + k,
-				Value: v,
+				Op:   "replace",
+				Path: "/metadata/annotations",
+				Value: map[string]string{
+					k: v,
+				},
 			})
 		}
 	}
@@ -221,7 +228,7 @@ func isMutationTarget(ignoreNamespaces []string, metadata *metav1.ObjectMeta) bo
 	}
 
 	status := annotation[admissionWebhookAnnotationInjectKey]
-	if strings.ToLower(status) == "yes" {
+	if strings.ToLower(status) == "true" {
 		return true
 	}
 	return false
